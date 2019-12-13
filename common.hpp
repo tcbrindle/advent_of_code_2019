@@ -76,6 +76,70 @@ public:
 
 } accumulate{};
 
+// Range to container
+template <template <class...> class C, typename Rng>
+constexpr auto to(Rng&& rng)
+{
+    auto view = nano::views::common(rng);
+    return C(view.begin(), view.end());
+}
+
+template <typename C, typename Rng>
+constexpr auto to(Rng&& rng)
+{
+    auto view = nano::views::common(rng);
+    return C(view.begin(), view.end());
+}
+
+template <typename C>
+constexpr auto to()
+{
+    return nano::detail::rao_proxy{[](auto&& rng) {
+        auto view = nano::views::common(rng);
+        return C(view.begin(), view.end());
+    }};
+}
+
+template <template <class...> class C>
+constexpr auto to()
+{
+    return nano::detail::rao_proxy{[](auto&& rng) {
+        auto view = nano::views::common(rng);
+        return C(view.begin(), view.end());
+    }};
+}
+
+inline constexpr struct {
+
+    constexpr auto operator()() const
+    {
+        return aoc::to<std::vector>();
+    }
+
+    template <typename Rng>
+    constexpr auto operator()(Rng&& rng) const
+    {
+        return aoc::to<std::vector>(std::forward<Rng>(rng));
+    }
+
+} to_vector;
+
+inline constexpr struct {
+
+    constexpr auto operator()() const
+    {
+        return aoc::to<std::string>();
+    }
+
+    template <typename Rng>
+    constexpr auto operator()(Rng&& rng) const
+    {
+        return aoc::to<std::string>(std::forward<Rng>(rng));
+    }
+
+} to_string;
+
+
 } // namespace aoc
 
 #endif
