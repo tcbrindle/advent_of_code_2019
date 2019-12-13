@@ -46,8 +46,10 @@ private:
     }
 
 public:
-    template <typename I, typename S, typename Init = nano::iter_value_t<I>,
-              typename Func = std::plus<>, typename Proj = nano::identity>
+    template <typename I, typename S,
+              typename Proj = nano::identity,
+              typename Init = nano::iter_value_t<nano::projected<I, Proj>>,
+              typename Func = std::plus<>>
     constexpr std::enable_if_t<
         nano::input_iterator<I> &&
         nano::sentinel_for<S, I>,
@@ -59,8 +61,10 @@ public:
         return impl(std::move(first), std::move(last), std::move(init), func, proj);
     }
 
-    template <typename R, typename Init = nano::range_value_t<R>,
-              typename Func = std::plus<>, typename Proj = nano::identity>
+    template <typename R,
+              typename Proj = nano::identity,
+              typename Init = nano::iter_value_t<nano::projected<nano::iterator_t<R>, Proj>>,
+              typename Func = std::plus<>>
     constexpr std::enable_if_t<
         nano::input_range<R> &&
         !nano::input_iterator<nano::remove_cvref_t<R>>,
