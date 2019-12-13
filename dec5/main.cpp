@@ -21,15 +21,14 @@ constexpr auto decode_instruction = [](int in) {
 };
 
 constexpr auto run_program = [](auto state, int in, auto out_fn) {
-    auto iptr = state.data();
+    std::size_t iptr = 0;
 
-    while (true) {
-        const auto [opcode, modes] = decode_instruction(*iptr);
-        /* sigh, can't capture structured bindings in C++17... */
-        auto& modes_ref = modes;
+    while (iptr < state.size()) {
+        const auto [opcode, modes] = decode_instruction(state[iptr]);
 
-        auto arg = [&modes_ref, iptr, &state] (int argnum) -> int& {
-            return modes_ref[argnum] == param_mode::position ? state[iptr[argnum + 1]] : iptr[argnum + 1];
+        auto arg = [modes = modes, iptr, &state] (int argnum) -> int& {
+            auto idx = iptr + argnum + 1;
+            return modes[argnum] == param_mode::position ? state[state[idx]] : state[idx];
         };
 
         switch (opcode) {
@@ -50,10 +49,10 @@ constexpr auto run_program = [](auto state, int in, auto out_fn) {
             iptr += 2;
             break;
         case 5:
-            iptr = arg(0) != 0 ? state.data() + arg(1) : iptr + 3;
+            iptr = arg(0) != 0 ? arg(1) : iptr + 3;
             break;
         case 6:
-            iptr = arg(0) == 0 ? state.data() + arg(1) : iptr + 3;
+            iptr = arg(0) == 0 ? arg(1) : iptr + 3;
             break;
         case 7:
             arg(2) = arg(0) < arg(1) ? 1 : 0;
@@ -70,6 +69,8 @@ constexpr auto run_program = [](auto state, int in, auto out_fn) {
             return state;
         }
     }
+
+    return state;
 };
 
 // Test program for part 2, from the problem description
@@ -94,14 +95,13 @@ static_assert(run(prog, 9) == 1001);
 
 auto read_input = [] (const char* path) {
     std::ifstream stream(path);
-    std::vector<int> vec;
-    int i;
-    while (stream >> i) {
-        vec.push_back(i);
-        char c; // eat the comma
-        stream >> c;
-    }
-    return vec;
+
+    return nano::istream_view<char>(stream)
+        | nano::views::split(nano::views::single(','))
+        | nano::views::transform([](auto rng) {
+            return std::stoi(aoc::to_string(rng));
+        })
+        | aoc::to_vector();
 };
 
 }
